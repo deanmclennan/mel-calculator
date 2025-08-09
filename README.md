@@ -1,6 +1,6 @@
 # MEL Category Calculator
 
-A Vite + React application for calculating Minimum Equipment List (MEL) categories for aircraft equipment.
+Application for calculating Minimum Equipment List (MEL) categories for aircraft equipment.
 
 ## Features
 
@@ -82,5 +82,4 @@ dist/                # Production build output (generated)
 - **Bundle size**: ~150KB gzipped
 - **Docker image**: ~25MB (nginx:alpine)`,
 
- # mel-calculator
-# mel-calculator
+
