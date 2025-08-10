@@ -16,10 +16,10 @@ services:
     restart: unless-stopped
     container_name: mel-calculator-dev
 
-  # Production service
+  # Production service with nginx
   mel-calculator:
     build: .
     ports:
       - "3000:80"
     restart: unless-stopped
-    container_name: mel-calculator-app
+    container_name: mel-calculator-nginx

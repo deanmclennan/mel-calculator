@@ -1,0 +1,80 @@
+name: Deploy to Server
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
+
+    - name: Build Docker image
+      run: |
+        docker build -t mel-calculator:latest .
+
+    - name: Save Docker image
+      run: |
+        docker save mel-calculator:latest | gzip > mel-calculator.tar.gz
+
+    - name: Deploy to server
+      uses: appleboy/ssh-action@v1.0.3
+      with:
+        host: ${{ secrets.SERVER_HOST }}
+        username: ${{ secrets.SERVER_USER }}
+        key: ${{ secrets.SERVER_SSH_KEY }}
+        port: ${{ secrets.SERVER_PORT }}
+        script: |
+          # Stop existing container
+          docker stop mel-calculator-nginx 2>/dev/null || true
+          docker rm mel-calculator-nginx 2>/dev/null || true
+          
+          # Remove old image
+          docker rmi mel-calculator:latest 2>/dev/null || true
+          
+          # Create app directory if it doesn't exist
+          mkdir -p ~/mel-calculator
+          cd ~/mel-calculator
+
+    - name: Copy files to server
+      uses: appleboy/scp-action@v0.1.7
+      with:
+        host: ${{ secrets.SERVER_HOST }}
+        username: ${{ secrets.SERVER_USER }}
+        key: ${{ secrets.SERVER_SSH_KEY }}
+        port: ${{ secrets.SERVER_PORT }}
+        source: "mel-calculator.tar.gz,docker-compose.yml"
+        target: "~/mel-calculator/"
+
+    - name: Start application
+      uses: appleboy/ssh-action@v1.0.3
+      with:
+        host: ${{ secrets.SERVER_HOST }}
+        username: ${{ secrets.SERVER_USER }}
+        key: ${{ secrets.SERVER_SSH_KEY }}
+        port: ${{ secrets.SERVER_PORT }}
+        script: |
+          cd ~/mel-calculator
+          
+          # Load Docker image
+          docker load < mel-calculator.tar.gz
+          
+          # Start the container
+          docker run -d \
+            --name mel-calculator-nginx \
+            --restart unless-stopped \
+            -p 3000:80 \
+            mel-calculator:latest
+          
+          # Clean up
+          rm mel-calculator.tar.gz
+          
+          echo "Deployment completed successfully!"

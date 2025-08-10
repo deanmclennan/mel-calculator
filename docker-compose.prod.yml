@@ -1,0 +1,11 @@
+version: '3.8'
+
+services:
+  mel-calculator:
+    build: .
+    ports:
+      - "3000:80"
+    restart: unless-stopped
+    container_name: mel-calculator-nginx
+    environment:
+      - NODE_ENV=production
